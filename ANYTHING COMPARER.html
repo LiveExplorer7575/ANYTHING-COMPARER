@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Comparison</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .controls {
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .comparison-container {
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+            overflow-x: auto;
+        }
+
+        .product-card, .feature-column {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
+            min-width: 250px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .feature-column {
+            background-color: transparent;
+            box-shadow: none;
+            min-width: 150px;
+            border-right: 1px solid #ddd;
+        }
+
+        .feature-cell, .product-cell {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            word-break: break-word;
+        }
+
+        .product-cell:first-child {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .product-cell:last-child {
+            border-bottom: none;
+        }
+
+        .product-image {
+            width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .editable {
+            outline: none;
+            cursor: text;
+            width: 100%;
+            min-height: 20px;
+        }
+
+        .image-input {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            box-sizing: border-box;
+        }
+        
+        .image-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .copy-icon, .delete-icon {
+            position: absolute;
+            top: 10px;
+            cursor: pointer;
+            font-size: 1.2em;
+            color: #ccc;
+            transition: color 0.2s;
+        }
+        
+        .copy-icon {
+            right: 30px;
+        }
+        
+        .delete-icon {
+            right: 10px;
+        }
+        
+        .copy-icon:hover, .delete-icon:hover {
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Product Comparison</h1>
+        <div class="controls">
+            <button id="addProduct">➕ Add Product</button>
+            <button id="addFeature">➕ Add Feature</button>
+        </div>
+    </header>
+    <main>
+        <div id="comparison-container" class="comparison-container">
+            <div class="feature-column">
+                <div class="feature-cell"><b>NAME</b></div>
+                <div class="feature-cell"><b>IMAGE</b></div>
+            </div>
+        </div>
+    </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const comparisonContainer = document.getElementById('comparison-container');
+            const addProductBtn = document.getElementById('addProduct');
+            const addFeatureBtn = document.getElementById('addFeature');
+
+            const createEditableCell = (content = '') => {
+                const div = document.createElement('div');
+                div.className = 'editable';
+                div.contentEditable = true;
+                div.innerText = content;
+                return div;
+            };
+
+            const duplicateProduct = (productCard) => {
+                const newCard = productCard.cloneNode(true);
+                
+                const newImageInputs = newCard.querySelectorAll('.image-input');
+                const originalImageInputs = productCard.querySelectorAll('.image-input');
+
+                newImageInputs.forEach((input, index) => {
+                    const originalImg = originalImageInputs[index].nextElementSibling;
+                    const newImg = input.nextElementSibling;
+                    if (originalImg.src && originalImg.style.display !== 'none') {
+                        newImg.src = originalImg.src;
+                        newImg.style.display = 'block';
+                    }
+                    input.addEventListener('input', () => {
+                        const url = input.value;
+                        if (url) {
+                            newImg.src = url;
+                            newImg.style.display = 'block';
+                        } else {
+                            newImg.style.display = 'none';
+                        }
+                    });
+                });
+                
+                const copyIcon = newCard.querySelector('.copy-icon');
+                copyIcon.onclick = () => duplicateProduct(newCard);
+
+                const deleteIcon = newCard.querySelector('.delete-icon');
+                deleteIcon.onclick = () => newCard.remove();
+                
+                comparisonContainer.appendChild(newCard);
+            };
+
+            const addProduct = () => {
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card';
+                
+                const copyIcon = document.createElement('span');
+                copyIcon.className = 'copy-icon';
+                copyIcon.innerHTML = '&#x2398;';
+                copyIcon.onclick = () => duplicateProduct(productCard);
+                productCard.appendChild(copyIcon);
+
+                const deleteIcon = document.createElement('span');
+                deleteIcon.className = 'delete-icon';
+                deleteIcon.innerHTML = '&#x2715;';
+                deleteIcon.onclick = () => productCard.remove();
+                productCard.appendChild(deleteIcon);
+
+                const featureCount = comparisonContainer.querySelector('.feature-column').children.length;
+
+                for (let i = 0; i < featureCount; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'product-cell';
+                    
+                    if (i === 0) {
+                        cell.appendChild(createEditableCell('New Product'));
+                    } else if (i === 1) {
+                        const imageWrapper = document.createElement('div');
+                        imageWrapper.className = 'image-wrapper';
+
+                        const imageInput = document.createElement('input');
+                        imageInput.type = 'text';
+                        imageInput.placeholder = 'Paste image URL here...';
+                        imageInput.className = 'image-input';
+                        
+                        const img = document.createElement('img');
+                        img.className = 'product-image';
+                        img.style.display = 'none';
+
+                        imageInput.addEventListener('input', () => {
+                            const url = imageInput.value;
+                            if (url) {
+                                img.src = url;
+                                img.style.display = 'block';
+                            } else {
+                                img.style.display = 'none';
+                            }
+                        });
+
+                        imageWrapper.appendChild(imageInput);
+                        imageWrapper.appendChild(img);
+                        cell.appendChild(imageWrapper);
+                    } else {
+                        cell.appendChild(createEditableCell(''));
+                    }
+
+                    productCard.appendChild(cell);
+                }
+                comparisonContainer.appendChild(productCard);
+            };
+
+            const addFeature = () => {
+                const featureColumn = comparisonContainer.querySelector('.feature-column');
+                const newFeatureRow = document.createElement('div');
+                newFeatureRow.className = 'feature-cell';
+                newFeatureRow.appendChild(createEditableCell(''));
+                featureColumn.appendChild(newFeatureRow);
+
+                const productCards = document.querySelectorAll('.product-card');
+                productCards.forEach(card => {
+                    const newCell = document.createElement('div');
+                    newCell.className = 'product-cell';
+                    newCell.appendChild(createEditableCell(''));
+                    card.appendChild(newCell);
+                });
+            };
+
+            addProductBtn.addEventListener('click', addProduct);
+            addFeatureBtn.addEventListener('click', addFeature);
+            
+            addProduct();
+        });
+    </script>
+</body>
+</html>
+
